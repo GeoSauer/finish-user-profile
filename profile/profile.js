@@ -1,7 +1,7 @@
 import '../auth/user.js';
 // > Part A: import updateProfile from fetch-utils.js
 // > Part B: import getUser and getProfile from fetch-utils.js
-import { updateProfile, getProfile, getUser } from '../fetch-utils.js';
+import { updateProfile, getProfile, getUser, upLoadImage } from '../fetch-utils.js';
 
 // > Part B: get the user
 const user = getUser();
@@ -11,6 +11,8 @@ const profileForm = document.getElementById('profile-form');
 const updateButton = profileForm.querySelector('button');
 const userNameInput = profileForm.querySelector('[name=user_name]');
 const bioTextArea = profileForm.querySelector('[name=bio]');
+const avatarInput = profileForm.querySelector('[name=avatar_url]');
+const preview = document.getElementById('preview');
 
 let profile = null;
 let error = null;
@@ -30,6 +32,11 @@ window.addEventListener('load', async () => {
     if (profile) {
         displayProfile();
     }
+});
+
+avatarInput.addEventListener('change', () => {
+    const file = avatarInput.files[0];
+    preview.src = URL.createObjectURL(file);
 });
 
 profileForm.addEventListener('submit', async (e) => {
@@ -53,6 +60,20 @@ profileForm.addEventListener('submit', async (e) => {
         user_name: formData.get('user_name'),
         bio: formData.get('bio'),
     };
+
+    // get the avatar file from the form
+    const imageFile = formData.get('avatar_url');
+    // Do we have a file? If so size will be > 0
+    if (imageFile.size) {
+        // put the image in the bucket using the user id
+        // as a folder, and whatever file name the uploaded
+        // image has
+        const imageName = `${user.id}/${imageFile.name}`;
+        // do the upload and get the returned url
+        const url = await upLoadImage('avatars', imageName, imageFile);
+        // add the url property to the update object
+        profileUpdate.avatar_url = url;
+    }
     //      - call updateProfile passing in profile update object, capture the response
     const response = await updateProfile(profileUpdate);
 
@@ -76,6 +97,9 @@ function displayProfile() {
     // > Part B: update user name and bio from profile object
     userNameInput.value = profile.user_name;
     bioTextArea.value = profile.bio;
+    if (profile.avatar_url) {
+        preview.src = profile.avatar_url;
+    }
 }
 
 function displayError() {
