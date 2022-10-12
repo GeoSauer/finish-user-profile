@@ -12,8 +12,8 @@ const params = new URLSearchParams(location.search);
 const redirectUrl = params.get('redirectUrl') || '../';
 // If user directly navigated to /auth, but we have a user, go back
 // (they need to sign out first)
-const user = getUser();
 if (user) location.replace(redirectUrl);
+const user = getUser();
 
 // Sign up options
 const signUpType = {
