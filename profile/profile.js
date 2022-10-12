@@ -1,15 +1,18 @@
 import '../auth/user.js';
 // > Part A: import updateProfile from fetch-utils.js
 // > Part B: import getUser and getProfile from fetch-utils.js
+import { updateProfile, getProfile, getUser, upLoadImage } from '../fetch-utils.js';
 
 // > Part B: get the user
-const user = null; // ???
+const user = getUser();
 
 const errorDisplay = document.getElementById('error-display');
 const profileForm = document.getElementById('profile-form');
 const updateButton = profileForm.querySelector('button');
 const userNameInput = profileForm.querySelector('[name=user_name]');
 const bioTextArea = profileForm.querySelector('[name=bio]');
+const avatarInput = profileForm.querySelector('[name=avatar_url]');
+const preview = document.getElementById('preview');
 
 let profile = null;
 let error = null;
@@ -17,7 +20,10 @@ let error = null;
 window.addEventListener('load', async () => {
     // > Part B:
     //      - get the profile based on user.id
+    const response = await getProfile(user.id);
     //      - set profile and error state from response object
+    profile = response.data;
+    error = response.error;
 
     if (error) {
         displayError();
@@ -26,6 +32,11 @@ window.addEventListener('load', async () => {
     if (profile) {
         displayProfile();
     }
+});
+
+avatarInput.addEventListener('change', () => {
+    const file = avatarInput.files[0];
+    preview.src = URL.createObjectURL(file);
 });
 
 profileForm.addEventListener('submit', async (e) => {
@@ -45,8 +56,26 @@ profileForm.addEventListener('submit', async (e) => {
 
     // > Part A
     //      - create a profile update object
+    const profileUpdate = {
+        user_name: formData.get('user_name'),
+        bio: formData.get('bio'),
+    };
+
+    // get the avatar file from the form
+    const imageFile = formData.get('avatar_url');
+    // Do we have a file? If so size will be > 0
+    if (imageFile.size) {
+        // put the image in the bucket using the user id
+        // as a folder, and whatever file name the uploaded
+        // image has
+        const imageName = `${user.id}/${imageFile.name}`;
+        // do the upload and get the returned url
+        const url = await upLoadImage('avatars', imageName, imageFile);
+        // add the url property to the update object
+        profileUpdate.avatar_url = url;
+    }
     //      - call updateProfile passing in profile update object, capture the response
-    const response = null; // ??????
+    const response = await updateProfile(profileUpdate);
 
     error = response.error;
 
@@ -60,12 +89,17 @@ profileForm.addEventListener('submit', async (e) => {
         updateButton.textContent = buttonText;
     } else {
         // > Part A: uncomment when working to redirect user
-        // location.assign('../');
+        location.assign('../');
     }
 });
 
 function displayProfile() {
     // > Part B: update user name and bio from profile object
+    userNameInput.value = profile.user_name;
+    bioTextArea.value = profile.bio;
+    if (profile.avatar_url) {
+        preview.src = profile.avatar_url;
+    }
 }
 
 function displayError() {
